@@ -34,9 +34,6 @@ Data_mat = CSV.read(Data_dir, DataFrame)
 # ╔═╡ f303fe2d-f836-490c-84e6-ae43ce74a9f5
 patient_ids = Data_mat[:, :id]
 
-# ╔═╡ f4534831-5138-458f-9b5f-dfba016353aa
-labels = Data_mat[:, :diagnosis]
-
 # ╔═╡ 465d0303-e8fb-41ed-a8f3-b36c1c72d6c4
 feature_names = names(Data_mat)[3:32]
 
@@ -91,7 +88,7 @@ row_norms = [norm(EV[i, :]) for i in 1:size(EV, 1)]
 T = EV ./ row_norms
 
 # ╔═╡ e787fff0-0a1f-473c-a1e7-3daf1f48bf6f
-function batchkmeans(X, k, args...; nruns=100, kwargs...)
+function batchkmeans(X, k, args...; nruns=200, kwargs...)
 	runs = @withprogress map(1:nruns) do idx
 		# Run K-means
 		Random.seed!(idx)  # set seed for reproducibility
@@ -118,14 +115,64 @@ spec_clusterings = batchkmeans(permutedims(T), 2; maxiter=1000)
 # ╔═╡ 99454533-f332-4f5c-ad1d-0d60211a06c9
 clu_assignments = spec_clusterings[1].assignments
 
+# ╔═╡ 76e520ad-215c-495e-bf4a-1ca883dccc9b
+labels = Data_mat[:, :diagnosis]
+
 # ╔═╡ 9dac3b4c-0067-4a5d-aa62-1adfe2006ca4
-findall(.==(1), clu_assignments)
+l1 = findall(.==(1), clu_assignments)
+
+# ╔═╡ c415fcd2-22e9-442f-97ee-9f24b42d5173
+l2 = findall(.==(2), clu_assignments)
 
 # ╔═╡ 8d3603a5-ba2c-4e90-b64d-3594eec56981
 l1_count = count(.==(1), clu_assignments)
 
 # ╔═╡ 1b9e2fb0-c091-4d9d-b726-6fba892dd0a1
 l2_count = count(.==(2), clu_assignments)
+
+# ╔═╡ ffcc7965-16eb-43d0-ae1f-d8dc065a51d2
+l1_labels = labels[l1]
+
+# ╔═╡ 7f574073-2848-4d70-8e48-63a848fe5a6a
+l2_labels = labels[l2]
+
+# ╔═╡ 7302ea9e-362b-4e96-a743-ba5ee7b4cf45
+unique(l1_labels)
+
+# ╔═╡ c3a3b12f-a489-4cba-a642-01be1eae4d39
+function count_labels(labels)
+    unique_labels = unique(labels)
+    counts = Dict(label => count(x -> x == label, labels) for label in unique_labels)
+    return counts
+end
+
+# ╔═╡ 68221ea3-40ca-40a2-898b-67ec842c4b89
+l1_counts = count_labels(l1_labels)
+
+# ╔═╡ 75bca777-b78a-49f0-ad97-054de0e53d9b
+l2_counts = count_labels(l2_labels)
+
+# ╔═╡ cec77293-4155-44be-9055-e018bffcf1c6
+total_l1 = sum(values(l1_counts))
+
+# ╔═╡ 899b0997-d150-4da9-bb61-d6a244dc2103
+md"""
+##### Calculate percentages for l1_labels
+"""
+
+# ╔═╡ 36dbe1fc-3365-4922-90f8-b3833251e887
+l1_percentages = Dict(label => (count / total_l1) * 100 for (label, count) in l1_counts)
+
+# ╔═╡ 504bd8f5-be2c-48d8-b900-1c3636fd28e0
+md"""
+##### Calculate percentages for l2_labels
+"""
+
+# ╔═╡ 343f262e-a080-4738-b67b-fb84b1779e92
+total_l2 = sum(values(l2_counts))
+
+# ╔═╡ 4685de83-b3c4-42c1-acd3-1a83aa19f225
+l2_percentages = Dict(label => (count / total_l2) * 100 for (label, count) in l2_counts)
 
 # ╔═╡ Cell order:
 # ╠═7de038d6-c135-11ef-039b-75d27586a5d9
@@ -135,7 +182,6 @@ l2_count = count(.==(2), clu_assignments)
 # ╠═372370d7-c3df-4251-9415-73e64e3f5796
 # ╠═c98bb3ae-e9c4-49d4-a8ce-0b822d26f9b6
 # ╠═f303fe2d-f836-490c-84e6-ae43ce74a9f5
-# ╠═f4534831-5138-458f-9b5f-dfba016353aa
 # ╠═465d0303-e8fb-41ed-a8f3-b36c1c72d6c4
 # ╠═425dff93-543c-4523-9a3b-06137324e7b9
 # ╠═e09c33b2-7a56-425a-b0b4-4d58d8bfc980
@@ -155,6 +201,20 @@ l2_count = count(.==(2), clu_assignments)
 # ╠═e787fff0-0a1f-473c-a1e7-3daf1f48bf6f
 # ╠═4696fb91-95ad-4bb9-8673-49e043b1e76a
 # ╠═99454533-f332-4f5c-ad1d-0d60211a06c9
+# ╠═76e520ad-215c-495e-bf4a-1ca883dccc9b
 # ╠═9dac3b4c-0067-4a5d-aa62-1adfe2006ca4
+# ╠═c415fcd2-22e9-442f-97ee-9f24b42d5173
 # ╠═8d3603a5-ba2c-4e90-b64d-3594eec56981
 # ╠═1b9e2fb0-c091-4d9d-b726-6fba892dd0a1
+# ╠═ffcc7965-16eb-43d0-ae1f-d8dc065a51d2
+# ╠═7f574073-2848-4d70-8e48-63a848fe5a6a
+# ╠═7302ea9e-362b-4e96-a743-ba5ee7b4cf45
+# ╠═c3a3b12f-a489-4cba-a642-01be1eae4d39
+# ╠═68221ea3-40ca-40a2-898b-67ec842c4b89
+# ╠═75bca777-b78a-49f0-ad97-054de0e53d9b
+# ╠═cec77293-4155-44be-9055-e018bffcf1c6
+# ╟─899b0997-d150-4da9-bb61-d6a244dc2103
+# ╠═36dbe1fc-3365-4922-90f8-b3833251e887
+# ╟─504bd8f5-be2c-48d8-b900-1c3636fd28e0
+# ╠═343f262e-a080-4738-b67b-fb84b1779e92
+# ╠═4685de83-b3c4-42c1-acd3-1a83aa19f225
